@@ -1,3 +1,4 @@
+#define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -7,7 +8,7 @@
 #include <string>
 
 #define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError(); x; ASSERT(GLLogCall(#x, __FILE__, __LINE__));
+#define GLCALL(x) GLClearError(); x; ASSERT(GLLogCall(#x, __FILE__, __LINE__));
 
 static void GLClearError() {
   while (glGetError() != GL_NO_ERROR);
@@ -94,6 +95,10 @@ int main(void) {
   if (!glfwInit())
     return -1;
 
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
   /* Create a windowed mode window and its OpenGL context */
   window = glfwCreateWindow(1000, 750, "Test", NULL, NULL);
   if (!window) {
@@ -103,6 +108,8 @@ int main(void) {
 
   /* Make the window's context current */
   glfwMakeContextCurrent(window);
+
+  glfwSwapInterval(1);
 
   if (glewInit() != GLEW_OK)
     std::cout << "Error!" << std::endl;
@@ -119,14 +126,17 @@ int main(void) {
     0, 1, 2, // first triangle
     2, 3, 0  // second triangle
 	};
+
+	unsigned int vao; // the id of the Vertex Array Object
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
   
   unsigned int buffer; // the id of this buffer
   glGenBuffers(1, &buffer);
   glBindBuffer(GL_ARRAY_BUFFER, buffer);
   glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
-
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0); /* actually link this buffer to VAO */
 
 	unsigned int ibo; // the id of this index buffer
   glGenBuffers(1, &ibo);
@@ -135,14 +145,31 @@ int main(void) {
 
 	ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
 	unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-	glUseProgram(shader);
+  glUseProgram(shader);
 
+	int location = glGetUniformLocation(shader, "u_Color");
+  ASSERT(~location);
+
+  glUseProgram(0);
+  glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	float r = 0.5f, g = 0.4f, b = 0.9f, a = 1.0f;
+	float increment = 0.01f;
   /* Loop until the user closes the window */
   while (!glfwWindowShouldClose(window)) {
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT);
 
-    GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+    glUseProgram(shader);
+    glBindVertexArray(vao);
+
+    glUniform4f(location, r, g, b, a);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+    if (b > 1.0f || b < 0.0f) increment = -increment;
+    b += increment;
 
     /* Swap front and back buffers */
     glfwSwapBuffers(window);
