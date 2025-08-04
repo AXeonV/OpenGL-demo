@@ -86,10 +86,6 @@ public:
 	void Use() {
 		glUseProgram(this->Program);
 	}
-
-	void setFloat(const GLchar* uName, GLfloat value) {
-		glUniform1f(glGetUniformLocation(this->Program, uName), value);
-	}
 };
 
 #endif
