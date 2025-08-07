@@ -6,13 +6,14 @@ layout(location = 2) in vec3 color;
 
 out vec2 Ttexcoord;
 out vec3 Tcolor;
+out float clipW;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 transform;
 
 void main() {
-  gl_Position = projection * view * model * vec4(pos, 1.0f);
+	vec4 clipPos = transform * vec4(pos, 1.0f);
+	gl_Position = clipPos;
 	Ttexcoord = vec2(texcoord.x, 1.0 - texcoord.y);
 	Tcolor = color;
+	clipW = clipPos.w;
 }

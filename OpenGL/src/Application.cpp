@@ -19,12 +19,13 @@ static void mouse_callback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
 static void scroll_callback(GLFWwindow* window, GLdouble xoffset, GLdouble yoffset);
 static void set_texture(GLuint& Tid, const GLchar* filename);
 
-const GLuint WIDTH = 1200, HEIGHT = 900;
+GLuint WIDTH = 1200, HEIGHT = 1200;
 
 Camera Falcon(glm::vec3(0.0f, 0.0f, 3.0f));
 GLfloat lastX = WIDTH / 2.0f;
 GLfloat lastY = HEIGHT / 2.0f;
 GLboolean firstMouse = true;
+GLboolean cursorEnabled = true;
 
 int main(void) {
 	/* setup GLFW */
@@ -38,7 +39,7 @@ int main(void) {
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, u8"ÃÎ ºË Áú Ã¨", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, u8"Èü²©ÃÎºËÐÇ", nullptr, nullptr);
 	if (window == nullptr) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -140,9 +141,10 @@ int main(void) {
 	/* get uniform location */
 	GLuint texture1Loc = glGetUniformLocation(Xeon.Program, "Utexture1");
 	GLuint texture2Loc = glGetUniformLocation(Xeon.Program, "Utexture2");
-	GLuint modelLoc = glGetUniformLocation(Xeon.Program, "model");
-	GLuint viewLoc = glGetUniformLocation(Xeon.Program, "view");
-	GLuint projectionLoc = glGetUniformLocation(Xeon.Program, "projection");
+	GLuint resolutionLoc = glGetUniformLocation(Xeon.Program, "u_resolution");
+	GLuint timeLoc = glGetUniformLocation(Xeon.Program, "u_time");
+	GLuint transformLoc = glGetUniformLocation(Xeon.Program, "transform");
+	GLuint invtransformLoc = glGetUniformLocation(Xeon.Program, "inv_transform");
 
 	/* init cube_position */
 	glm::vec3 cubePositions[] = {
@@ -178,26 +180,27 @@ int main(void) {
 		glUniform1i(texture2Loc, 1);
 
 		/* setup transformation */
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection = glm::mat4(1.0f);
-		view = Falcon.GetViewMatrix();
-		projection = glm::perspective(glm::radians(Falcon.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glm::mat4 view = Falcon.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(Falcon.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
 		/* draw */
-		glBindVertexArray(VAO);
 		for (int i = 0; i < 10; ++i) {
 			/* setup transformation */
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
-			GLfloat angle = static_cast<GLfloat>(glm::radians((sin(glfwGetTime()) * 180.0f) + 20.0f * i));
-			model = glm::rotate(model, angle, glm::vec3(0.8f, 0.3f, 0.5f));
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			glm::mat4 transform = projection * view * model;
+			glm::mat4 inv_transform = glm::inverse(transform);
+			glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+			glUniformMatrix4fv(invtransformLoc, 1, GL_FALSE, glm::value_ptr(inv_transform));
 
+			GLfloat startOffset = (i + 1) * 20.0f;
+			glUniform2f(resolutionLoc, (GLfloat)WIDTH, (GLfloat)HEIGHT);
+			glUniform1f(timeLoc, (GLfloat)glfwGetTime() + startOffset);
+
+			glBindVertexArray(VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
 		}
-		glBindVertexArray(0);
 
 		/* update */
 		glfwSwapBuffers(window);
@@ -216,6 +219,17 @@ int main(void) {
 static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mode) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS) {
+		cursorEnabled ^= 1;
+		if (cursorEnabled) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			firstMouse = false;
+		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			firstMouse = true;
+		}
+	}
 
 	if (key == GLFW_KEY_W)
 		Falcon.ProcessKeyboard(FORWARD);
@@ -228,7 +242,7 @@ static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint ac
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, GLint width, GLint height) {
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, WIDTH = width, HEIGHT = height);
 }
 
 static void mouse_callback(GLFWwindow* window, GLdouble xposIn, GLdouble yposIn) {
