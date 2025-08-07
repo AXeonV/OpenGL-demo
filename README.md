@@ -8,7 +8,7 @@ a demo for opengl learning
 ![container](OpenGL/doc/container.png)
 3. Transformations
 4. Coordinate Systems
-![ÃÎºËÁúÃ¨](OpenGL/doc/ÃÎºËÁúÃ¨.png)
+![ÃÎºËÁúÃ¨](OpenGL/doc/cube1.1.png)
 5. Camera
-![Èü²©ÃÎºËĞÇ1](OpenGL/doc/Èü²©ÃÎºËĞÇ1.png)
-![Èü²©ÃÎºËĞÇ2](OpenGL/doc/Èü²©ÃÎºËĞÇ2.png)
+![Èü²©ÃÎºËĞÇ1](OpenGL/doc/cube2.1.png)
+![Èü²©ÃÎºËĞÇ2](OpenGL/doc/cube2.2.png)
