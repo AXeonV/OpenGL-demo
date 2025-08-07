@@ -12,39 +12,20 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
+#include "Camera.h"
+
+static void framebuffer_size_callback(GLFWwindow* window, GLint width, GLint height);
+static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mode);
+static void mouse_callback(GLFWwindow* window, GLdouble xpos, GLdouble ypos);
+static void scroll_callback(GLFWwindow* window, GLdouble xoffset, GLdouble yoffset);
+static void set_texture(GLuint& Tid, const GLchar* filename);
 
 const GLuint WIDTH = 1200, HEIGHT = 900;
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
-}
-
-static void set_texture(GLuint &Tid, const char* filename) {
-	glGenTextures(1, &Tid);
-	glBindTexture(GL_TEXTURE_2D, Tid);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	int img_width, img_height, nr_channels;
-	unsigned char* image = stbi_load(filename, &img_width, &img_height, &nr_channels, 0);
-	if (image) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else std::cout << "Failed to load image: " << filename << std::endl;
-
-	stbi_image_free(image);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
+Camera Falcon(glm::vec3(0.0f, 0.0f, 3.0f));
+GLfloat lastX = WIDTH / 2.0f;
+GLfloat lastY = HEIGHT / 2.0f;
+GLboolean firstMouse = true;
 
 int main(void) {
 	/* setup GLFW */
@@ -68,8 +49,12 @@ int main(void) {
 
 	glfwSwapInterval(1); // fps:60
 
-	glfwSetKeyCallback(window, key_callback);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	/* setup GLEW */
 	glewExperimental = GL_TRUE;
@@ -197,8 +182,8 @@ int main(void) {
 		/* setup transformation */
 		glm::mat4 view = glm::mat4(1.0f);
 		glm::mat4 projection = glm::mat4(1.0f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		projection = glm::perspective(glm::radians(45.0f), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+		view = Falcon.GetViewMatrix();
+		projection = glm::perspective(glm::radians(Falcon.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -228,4 +213,67 @@ int main(void) {
 	/* terminate GLFW */
 	glfwTerminate();
 	return 0;
+}
+
+static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mode) {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+
+	if (key == GLFW_KEY_W)
+		Falcon.ProcessKeyboard(FORWARD);
+	if (key == GLFW_KEY_S)
+		Falcon.ProcessKeyboard(BACKWARD);
+	if (key == GLFW_KEY_A)
+		Falcon.ProcessKeyboard(LEFT);
+	if (key == GLFW_KEY_D)
+		Falcon.ProcessKeyboard(RIGHT);
+}
+
+static void framebuffer_size_callback(GLFWwindow* window, GLint width, GLint height) {
+	glViewport(0, 0, width, height);
+}
+
+static void mouse_callback(GLFWwindow* window, GLdouble xposIn, GLdouble yposIn) {
+	GLfloat xpos = static_cast<GLfloat>(xposIn);
+	GLfloat ypos = static_cast<GLfloat>(yposIn);
+
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	GLfloat xoffset = xpos - lastX;
+	GLfloat yoffset = lastY - ypos;
+
+	lastX = xpos;
+	lastY = ypos;
+
+	Falcon.ProcessMouseMovement(xoffset, yoffset);
+}
+
+static void scroll_callback(GLFWwindow* window, GLdouble xoffset, GLdouble yoffset) {
+	Falcon.ProcessMouseScroll(static_cast<GLfloat>(yoffset));
+}
+
+static void set_texture(GLuint& Tid, const GLchar* filename) {
+	glGenTextures(1, &Tid);
+	glBindTexture(GL_TEXTURE_2D, Tid);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	GLint img_width, img_height, nr_channels;
+	unsigned char* image = stbi_load(filename, &img_width, &img_height, &nr_channels, 0);
+	if (image) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else std::cout << "Failed to load image: " << filename << std::endl;
+
+	stbi_image_free(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
