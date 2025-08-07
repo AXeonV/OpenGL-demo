@@ -1,7 +1,6 @@
 #include <iostream>
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -56,10 +55,9 @@ int main(void) {
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	/* setup GLEW */
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) {
-		std::cout << "Failed to initialize GLEW" << std::endl;
+	/* setup GLAD */
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
 
