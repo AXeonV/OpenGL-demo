@@ -2,13 +2,20 @@
 
 in vec2 Ttexcoord;
 in vec3 Tcolor;
-
+in vec3 Tnormal;
+in vec3 Fpos;
 in float clipW;
+
+uniform vec3 Lcolor;
+uniform vec3 Lpos;
+uniform vec3 Vpos;
 
 uniform vec2 u_resolution;
 uniform float u_time;
 
-uniform mat4 inv_transform;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 uniform sampler2D Utexture1;
 uniform sampler2D Utexture2;
@@ -41,8 +48,9 @@ vec2 get_pos() {
 	ndc.x = (gl_FragCoord.x / u_resolution.x) * 2.0 - 1.0;
 	ndc.y = (gl_FragCoord.y / u_resolution.y) * 2.0 - 1.0;
 	ndc.z = gl_FragCoord.z * 2.0 - 1.0;
+	mat4 transform = projection * view * model;
 	vec4 clipPos = vec4(ndc.xyz * clipW, clipW);
-	vec4 modelPos = inv_transform * clipPos;
+	vec4 modelPos = inverse(transform) * clipPos;
 	modelPos *= 2.0f;
 	if (1.0f - abs(modelPos.x) < EPS) return vec2(modelPos.y, modelPos.z);
 	if (1.0f - abs(modelPos.y) < EPS) return vec2(modelPos.x, modelPos.z);
@@ -50,7 +58,7 @@ vec2 get_pos() {
 }
 
 void main() {
-	vec3 color = vec3(0.0);
+	vec3 Rcolor = vec3(0.0);
 	vec2 FragPos = get_pos();
 	vec2 uv = vec2(abs(FragPos.x), FragPos.y);
 	float breath = 1.0 + 2.0 * sin(u_time * 0.2) * smoothstep(0.2, 1.5, length(uv));
@@ -63,12 +71,28 @@ void main() {
 		uv += noise(sin(uv) * 0.6);
 		uv += noise(-cos(uv) * 0.6);
 
-		color += 0.002 / length(uv + sin(t));
+		Rcolor += 0.002 / length(uv + sin(t));
 
 		float intensity = 0.1 / length(uv - (10.3) * sin(t)) * (length(uv) * sin(float(i) + u_time));
 
-		color += palette2(float(i) / u_time, u_time * 0.5) * intensity;
+		Rcolor += palette2(float(i) / u_time, u_time * 0.5) * intensity;
 	}
 
-	gl_FragColor = vec4(color, 1.0f) * vec4(Tcolor, 1.0f) * 2.0f;
+	float ambientStrength = 0.1;
+	vec3 ambient = ambientStrength * Lcolor;
+
+	vec3 norm = normalize(Tnormal);
+	vec3 lightDir = normalize(Lpos - Fpos);
+	float diff = max(dot(norm, lightDir), 0.0);
+	vec3 diffuse = diff * Lcolor;
+
+	float specularStrength = 10.0;
+	vec3 viewDir = normalize(Vpos - Fpos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+	vec3 specular = specularStrength * spec * Lcolor;
+
+	vec3 Tresult = (ambient + diffuse + specular) * Tcolor;
+
+	gl_FragColor = vec4(Rcolor, 1.0f) * vec4(Tresult, 1.0f) * 2.0f;
 }

@@ -21,7 +21,7 @@ static void set_texture(GLuint& Tid, const GLchar* filename);
 
 GLuint WIDTH = 1200, HEIGHT = 1200;
 
-Camera Falcon(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera Cam(glm::vec3(0.0f, 0.0f, 3.0f));
 GLfloat lastX = WIDTH / 2.0f;
 GLfloat lastY = HEIGHT / 2.0f;
 GLboolean firstMouse = true;
@@ -66,72 +66,86 @@ int main(void) {
 	glEnable(GL_DEPTH_TEST);
 
 	/* setup shaders */
-	Shader Xeon("res/shaders/vertex.glsl", "res/shaders/fragment.glsl");
+	Shader Cube("res/shaders/cube/vertex.glsl", "res/shaders/cube/fragment.glsl");
+	Shader Lamp("res/shaders/light/vertex.glsl", "res/shaders/light/fragment.glsl");
 
 	/* init vertex data */
 	GLfloat vertices[] = {
-				-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,
-				 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
-				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f,
-				-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,
+		    // Position           // TexCoord  // Color           // Normal
+				-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
+				 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f,  0.0f, -1.0f,
+				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,  0.0f,  0.0f, -1.0f,
+				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,  0.0f,  0.0f, -1.0f,
+				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f,  0.0f,  0.0f, -1.0f,
+				-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
 
-				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,
-				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
-				 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 1.0f,
-				 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 1.0f,
-				-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f, 0.0f,
-				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,
+				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,  0.0f,  0.0f,  1.0f,
+				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,  0.0f,  0.0f,  1.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 1.0f,  0.0f,  0.0f,  1.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 1.0f,  0.0f,  0.0f,  1.0f,
+				-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f, 0.0f,  0.0f,  0.0f,  1.0f,
+				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,  0.0f,  0.0f,  1.0f,
 
-				-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f,
-				-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  1.0f, 1.0f, 0.0f,
-				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,
-				-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f,
+				-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+				-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  1.0f, 1.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
+				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f, -1.0f,  0.0f,  0.0f,
+				-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 0.0f, -1.0f,  0.0f,  0.0f,
 
-				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,
-				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-				 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-				 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-				 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 1.0f, 0.0f,
-				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,  1.0f,  0.0f,  0.0f,
+				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,  1.0f,  0.0f,  0.0f,
+				 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,  0.0f,
+				 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,  0.0f,
+				 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 1.0f, 0.0f,  1.0f,  0.0f,  0.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,  1.0f,  0.0f,  0.0f,
 
-				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-				 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
-				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,
-				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,
-				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
+				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+				 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+				 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  1.0f, 1.0f, 0.0f,  0.0f, -1.0f,  0.0f,
+				-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 1.0f,  0.0f, -1.0f,  0.0f,
+				-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,  0.0f, -1.0f,  0.0f,
 
-				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f,
-				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,
-				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,
-				-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f, 0.0f,
-				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f
+				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f,  0.0f,  1.0f,  0.0f,
+				 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,  0.0f,  1.0f,  0.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,  0.0f,  1.0f,  0.0f,
+				 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 1.0f,  0.0f,  1.0f,  0.0f,
+				-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f, 0.0f,  0.0f,  1.0f,  0.0f,
+				-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  1.0f, 1.0f, 0.0f,  0.0f,  1.0f,  0.0f
 	};
 
 	/* setup vertex & pointer */
-	GLuint VBO, VAO;
-	glGenVertexArrays(1, &VAO);
+	GLuint VBO, cube_VAO;
 	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &cube_VAO);
 
-	glBindVertexArray(VAO);
+	glBindVertexArray(cube_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
 
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(3);
+
 	glBindVertexArray(0);
+
+	GLuint light_VAO;
+	glGenVertexArrays(1, &light_VAO);
+
+	glBindVertexArray(light_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	/* load texture */
 	GLuint texture1, texture2;
@@ -139,12 +153,19 @@ int main(void) {
 	set_texture(texture2, "res/textures/cbc.jpg");
 
 	/* get uniform location */
-	GLuint texture1Loc = glGetUniformLocation(Xeon.Program, "Utexture1");
-	GLuint texture2Loc = glGetUniformLocation(Xeon.Program, "Utexture2");
-	GLuint resolutionLoc = glGetUniformLocation(Xeon.Program, "u_resolution");
-	GLuint timeLoc = glGetUniformLocation(Xeon.Program, "u_time");
-	GLuint transformLoc = glGetUniformLocation(Xeon.Program, "transform");
-	GLuint invtransformLoc = glGetUniformLocation(Xeon.Program, "inv_transform");
+	GLuint texture1Loc = glGetUniformLocation(Cube.Program, "Utexture1");
+	GLuint texture2Loc = glGetUniformLocation(Cube.Program, "Utexture2");
+	GLuint resolutionLoc = glGetUniformLocation(Cube.Program, "u_resolution");
+	GLuint timeLoc = glGetUniformLocation(Cube.Program, "u_time");
+	GLuint CmodelLoc = glGetUniformLocation(Cube.Program, "model");
+	GLuint LmodelLoc = glGetUniformLocation(Lamp.Program, "model");
+	GLuint CviewLoc = glGetUniformLocation(Cube.Program, "view");
+	GLuint LviewLoc = glGetUniformLocation(Lamp.Program, "view");
+	GLuint CprojectionLoc = glGetUniformLocation(Cube.Program, "projection");
+	GLuint LprojectionLoc = glGetUniformLocation(Lamp.Program, "projection");
+	GLuint LcolorLoc = glGetUniformLocation(Cube.Program, "Lcolor");
+	GLuint LposLoc = glGetUniformLocation(Cube.Program, "Lpos");
+	GLuint VposLoc = glGetUniformLocation(Cube.Program, "Vpos");
 
 	/* init cube_position */
 	glm::vec3 cubePositions[] = {
@@ -159,6 +180,8 @@ int main(void) {
 		glm::vec3( 1.5f,  0.2f, -1.5f),
 		glm::vec3(-1.8f,  1.0f, -1.5f)
 	};
+	/* init Lamp_position */
+	glm::vec3 LampPosition(-4.0f, 2.0f, -4.0f);
 
 	/* GAME LOOP */
 	while (!glfwWindowShouldClose(window)) {
@@ -167,9 +190,6 @@ int main(void) {
 		/* clear */
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		/* activate shader */
-		Xeon.Use();
 
 		/* setup texture */
 		glActiveTexture(GL_TEXTURE0);
@@ -180,24 +200,42 @@ int main(void) {
 		glUniform1i(texture2Loc, 1);
 
 		/* setup transformation */
-		glm::mat4 view = Falcon.GetViewMatrix();
-		glm::mat4 projection = glm::perspective(glm::radians(Falcon.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
+		glm::mat4 model = glm::mat4(1.0f); 
+		glm::mat4 view = Cam.GetViewMatrix();
+		glm::mat4 projection = glm::perspective(glm::radians(Cam.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
 		/* draw */
+		Lamp.Use();
+		GLfloat timeVal = (GLfloat)glfwGetTime() * 0.5f;
+		LampPosition.x = -4.0f * sin(timeVal);
+		LampPosition.y = 2.0f * sin(timeVal);
+		LampPosition.z = -4.0f * cos(timeVal);
+		model = glm::translate(model, LampPosition);
+		model = glm::scale(model, glm::vec3(0.2f));
+		glUniformMatrix4fv(LmodelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(LviewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(LprojectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		glBindVertexArray(light_VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+
+		Cube.Use();
+		glUniform3f(LcolorLoc, 1.0f, 1.0f, 1.0f);
+		glUniform3f(LposLoc, LampPosition.x, LampPosition.y, LampPosition.z);
+		glUniform3f(VposLoc, Cam.Position.x, Cam.Position.y, Cam.Position.z);
 		for (int i = 0; i < 10; ++i) {
 			/* setup transformation */
-			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
-			glm::mat4 transform = projection * view * model;
-			glm::mat4 inv_transform = glm::inverse(transform);
-			glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
-			glUniformMatrix4fv(invtransformLoc, 1, GL_FALSE, glm::value_ptr(inv_transform));
-
+			glUniformMatrix4fv(CmodelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			glUniformMatrix4fv(CviewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(CprojectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+			
 			GLfloat startOffset = (i + 1) * 20.0f;
 			glUniform2f(resolutionLoc, (GLfloat)WIDTH, (GLfloat)HEIGHT);
 			glUniform1f(timeLoc, (GLfloat)glfwGetTime() + startOffset);
 
-			glBindVertexArray(VAO);
+			glBindVertexArray(cube_VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 			glBindVertexArray(0);
 		}
@@ -208,7 +246,7 @@ int main(void) {
 	}
 
 	/* delete buffer */
-	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &cube_VAO);
 	glDeleteBuffers(1, &VBO);
 
 	/* terminate GLFW */
@@ -232,13 +270,13 @@ static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint ac
 	}
 
 	if (key == GLFW_KEY_W)
-		Falcon.ProcessKeyboard(FORWARD);
+		Cam.ProcessKeyboard(FORWARD);
 	if (key == GLFW_KEY_S)
-		Falcon.ProcessKeyboard(BACKWARD);
+		Cam.ProcessKeyboard(BACKWARD);
 	if (key == GLFW_KEY_A)
-		Falcon.ProcessKeyboard(LEFT);
+		Cam.ProcessKeyboard(LEFT);
 	if (key == GLFW_KEY_D)
-		Falcon.ProcessKeyboard(RIGHT);
+		Cam.ProcessKeyboard(RIGHT);
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, GLint width, GLint height) {
@@ -261,11 +299,11 @@ static void mouse_callback(GLFWwindow* window, GLdouble xposIn, GLdouble yposIn)
 	lastX = xpos;
 	lastY = ypos;
 
-	Falcon.ProcessMouseMovement(xoffset, yoffset);
+	Cam.ProcessMouseMovement(xoffset, yoffset);
 }
 
 static void scroll_callback(GLFWwindow* window, GLdouble xoffset, GLdouble yoffset) {
-	Falcon.ProcessMouseScroll(static_cast<GLfloat>(yoffset));
+	Cam.ProcessMouseScroll(static_cast<GLfloat>(yoffset));
 }
 
 static void set_texture(GLuint& Tid, const GLchar* filename) {

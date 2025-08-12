@@ -23,8 +23,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\vertex.glsl" />
-    <None Include="res\shaders\fragment.glsl" />
+    <None Include="res\shaders\cube\vertex.glsl" />
+    <None Include="res\shaders\cube\fragment.glsl" />
+    <None Include="res\shaders\light\fragment.glsl" />
+    <None Include="res\shaders\light\vertex.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Shader.h">
