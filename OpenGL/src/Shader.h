@@ -88,6 +88,31 @@ public:
 	void Use() const {
 		glUseProgram(this->Program);
 	}
+
+	void setInt(const GLchar* name, GLint value) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniform1i(location, value);
+	}
+	void setFloat(const GLchar* name, GLfloat value) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniform1f(location, value);
+	}
+	void setVec2(const GLchar* name, GLfloat x, GLfloat y) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniform2f(location, x, y);
+	}
+	void setVec3(const GLchar* name, GLfloat x, GLfloat y, GLfloat z) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniform3f(location, x, y, z);
+	}
+	void setVec4(const GLchar* name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniform4f(location, x, y, z, w);
+	}
+	void setMat4(const GLchar* name, const GLfloat* value) {
+		GLint location = glGetUniformLocation(this->Program, name);
+		glUniformMatrix4fv(location, 1, GL_FALSE, value);
+	}
 };
 
 #endif

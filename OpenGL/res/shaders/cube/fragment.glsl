@@ -20,6 +20,10 @@ uniform mat4 projection;
 uniform sampler2D Utexture1;
 uniform sampler2D Utexture2;
 
+// x, y, z: ambient, diffuse, specular
+uniform vec3 light;
+uniform vec4 material; // w: shininess
+
 const float EPS = 1e-3;
 
 vec3 palette2(float t, float factor) {
@@ -78,21 +82,20 @@ void main() {
 		Rcolor += palette2(float(i) / u_time, u_time * 0.5) * intensity;
 	}
 
-	float ambientStrength = 0.1;
-	vec3 ambient = ambientStrength * Lcolor;
+
+	vec3 ambient = light.x * Lcolor * material.x;
 
 	vec3 norm = normalize(Tnormal);
 	vec3 lightDir = normalize(Lpos - Fpos);
 	float diff = max(dot(norm, lightDir), 0.0);
-	vec3 diffuse = diff * Lcolor;
+	vec3 diffuse = light.y * Lcolor * (diff * material.y);
 
-	float specularStrength = 10.0;
 	vec3 viewDir = normalize(Vpos - Fpos);
 	vec3 reflectDir = reflect(-lightDir, norm);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-	vec3 specular = specularStrength * spec * Lcolor;
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.w);
+	vec3 specular = light.z * Lcolor * (spec * material.z);
 
-	vec3 Tresult = (ambient + diffuse + specular) * Tcolor;
+	vec3 Tret = (ambient + diffuse + specular) * Tcolor;
 
-	gl_FragColor = vec4(Rcolor, 1.0f) * vec4(Tresult, 1.0f) * 2.0f;
+	gl_FragColor = vec4(Rcolor + 0.5 * Tret, 1.0f);
 }

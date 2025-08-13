@@ -12,3 +12,4 @@ a demo for opengl learning
 5. Camera
 ![Èü²©ÃÎºËĞÇ1](OpenGL/doc/cube2.1.png)
 ![Èü²©ÃÎºËĞÇ2](OpenGL/doc/cube2.2.png)
+6. Lighting

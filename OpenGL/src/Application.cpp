@@ -119,31 +119,23 @@ int main(void) {
 	GLuint VBO, cube_VAO;
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &cube_VAO);
-
 	glBindVertexArray(cube_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)0);
 	glEnableVertexAttribArray(0);
-
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
-
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
-
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(3);
-
 	glBindVertexArray(0);
 
 	GLuint light_VAO;
 	glGenVertexArrays(1, &light_VAO);
-
 	glBindVertexArray(light_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -151,21 +143,6 @@ int main(void) {
 	GLuint texture1, texture2;
 	set_texture(texture1, "res/textures/wall.jpg");
 	set_texture(texture2, "res/textures/cbc.jpg");
-
-	/* get uniform location */
-	GLuint texture1Loc = glGetUniformLocation(Cube.Program, "Utexture1");
-	GLuint texture2Loc = glGetUniformLocation(Cube.Program, "Utexture2");
-	GLuint resolutionLoc = glGetUniformLocation(Cube.Program, "u_resolution");
-	GLuint timeLoc = glGetUniformLocation(Cube.Program, "u_time");
-	GLuint CmodelLoc = glGetUniformLocation(Cube.Program, "model");
-	GLuint LmodelLoc = glGetUniformLocation(Lamp.Program, "model");
-	GLuint CviewLoc = glGetUniformLocation(Cube.Program, "view");
-	GLuint LviewLoc = glGetUniformLocation(Lamp.Program, "view");
-	GLuint CprojectionLoc = glGetUniformLocation(Cube.Program, "projection");
-	GLuint LprojectionLoc = glGetUniformLocation(Lamp.Program, "projection");
-	GLuint LcolorLoc = glGetUniformLocation(Cube.Program, "Lcolor");
-	GLuint LposLoc = glGetUniformLocation(Cube.Program, "Lpos");
-	GLuint VposLoc = glGetUniformLocation(Cube.Program, "Vpos");
 
 	/* init cube_position */
 	glm::vec3 cubePositions[] = {
@@ -188,7 +165,7 @@ int main(void) {
 		/* render */
 
 		/* clear */
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.28f, 0.32f, 0.48f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/* setup texture */
@@ -196,44 +173,49 @@ int main(void) {
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
-		glUniform1i(texture1Loc, 0);
-		glUniform1i(texture2Loc, 1);
+		Cube.setInt("Utexture1", 0);
+		Cube.setInt("Utexture2", 1);
 
 		/* setup transformation */
 		glm::mat4 model = glm::mat4(1.0f); 
 		glm::mat4 view = Cam.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(Cam.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
-		/* draw */
+		/* draw lamp */
 		Lamp.Use();
-		GLfloat timeVal = (GLfloat)glfwGetTime() * 0.5f;
-		LampPosition.x = -4.0f * sin(timeVal);
-		LampPosition.y = 2.0f * sin(timeVal);
-		LampPosition.z = -4.0f * cos(timeVal);
+		GLfloat timeVal = (GLfloat)glfwGetTime();
+		LampPosition.x = -4.0f * sin(timeVal * 0.5f);
+		LampPosition.y = 2.0f * sin(timeVal * 0.5f);
+		LampPosition.z = -4.0f * cos(timeVal * 0.5f);
 		model = glm::translate(model, LampPosition);
 		model = glm::scale(model, glm::vec3(0.2f));
-		glUniformMatrix4fv(LmodelLoc, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(LviewLoc, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(LprojectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+		Lamp.setMat4("model", glm::value_ptr(model));
+		Lamp.setMat4("view", glm::value_ptr(view));
+		Lamp.setMat4("projection", glm::value_ptr(projection));
+
 		glBindVertexArray(light_VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
+		/* draw cubes */
 		Cube.Use();
-		glUniform3f(LcolorLoc, 1.0f, 1.0f, 1.0f);
-		glUniform3f(LposLoc, LampPosition.x, LampPosition.y, LampPosition.z);
-		glUniform3f(VposLoc, Cam.Position.x, Cam.Position.y, Cam.Position.z);
+		Cube.setVec3("Lcolor", 1.0f, 1.0f, 1.0f);
+		Cube.setVec3("light", 1.0f, 1.0f, 1.0f);
+		Cube.setVec4("material", 0.1f, 0.5f, 3.0f, 32.0f);
+		Cube.setVec3("Lpos", LampPosition.x, LampPosition.y, LampPosition.z);
+		Cube.setVec3("Vpos", Cam.Position.x, Cam.Position.y, Cam.Position.z);
+
 		for (int i = 0; i < 10; ++i) {
 			/* setup transformation */
 			model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
-			glUniformMatrix4fv(CmodelLoc, 1, GL_FALSE, glm::value_ptr(model));
-			glUniformMatrix4fv(CviewLoc, 1, GL_FALSE, glm::value_ptr(view));
-			glUniformMatrix4fv(CprojectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+			Cube.setMat4("model", glm::value_ptr(model));
+			Cube.setMat4("view", glm::value_ptr(view));
+			Cube.setMat4("projection", glm::value_ptr(projection));
 			
 			GLfloat startOffset = (i + 1) * 20.0f;
-			glUniform2f(resolutionLoc, (GLfloat)WIDTH, (GLfloat)HEIGHT);
-			glUniform1f(timeLoc, (GLfloat)glfwGetTime() + startOffset);
+			Cube.setVec2("u_resolution", (GLfloat)WIDTH, (GLfloat)HEIGHT);
+			Cube.setFloat("u_time", timeVal + startOffset);
 
 			glBindVertexArray(cube_VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
