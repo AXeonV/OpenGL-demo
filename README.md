@@ -16,3 +16,4 @@ a demo for opengl learning
 ![Èü²©ÃÎºËĞÇ2A](OpenGL/doc/cube3.1.png)
 ![Èü²©ÃÎºËĞÇ2B](OpenGL/doc/cube3.2.png)
 ![Èü²©ÃÎºËĞÇ2C](OpenGL/doc/cube3.3.png)
+![Èü²©ÃÎºËĞÇ2D](OpenGL/doc/cube3.4.png)

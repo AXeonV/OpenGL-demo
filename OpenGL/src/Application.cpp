@@ -224,8 +224,8 @@ int main(void) {
 			Cube.setFloat(("plight[" + ch + "].specular").c_str(), 1.0f);
 			Cube.setVec3(("plight[" + ch + "].K").c_str(), 1.0f, 0.045f, 0.0075f);
 		}
-		Cube.setFloat("material.ambient", 0.1f);
-		Cube.setFloat("material.diffuse", 0.5f);
+		Cube.setFloat("material.ambient", 0.0f);
+		Cube.setFloat("material.diffuse", 0.2f);
 		Cube.setFloat("material.specular", 3.0f);
 		Cube.setFloat("material.shininess", 32.0f);
 		/* draw cubes */
