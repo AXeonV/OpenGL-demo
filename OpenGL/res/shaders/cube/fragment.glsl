@@ -3,12 +3,8 @@
 in vec2 Ttexcoord;
 in vec3 Tcolor;
 in vec3 Tnormal;
-in vec3 Fpos;
+in vec3 VertexPos;
 in float clipW;
-
-uniform vec3 Lcolor;
-uniform vec3 Lpos;
-uniform vec3 Vpos;
 
 uniform vec2 u_resolution;
 uniform float u_time;
@@ -20,9 +16,41 @@ uniform mat4 projection;
 uniform sampler2D Utexture1;
 uniform sampler2D Utexture2;
 
-// x, y, z: ambient, diffuse, specular
-uniform vec3 light;
-uniform vec4 material; // w: shininess
+struct Material {
+	float ambient;
+	float diffuse;
+	float specular;
+	float shininess;
+};
+uniform Material material;
+
+struct Dir_Light {
+	vec3 direction;
+	vec3 color;
+
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+};
+uniform Dir_Light dlight;
+
+struct Point_Light {
+	vec3 position;
+	vec3 color;
+
+	float ambient;
+	float diffuse;
+	float specular;
+
+	vec3 K;
+};
+#define NR_POINT_LIGHTS 3
+uniform Point_Light plight[NR_POINT_LIGHTS];
+
+struct Camera {
+	vec3 position;
+};
+uniform Camera camera;
 
 const float EPS = 1e-3;
 
@@ -61,6 +89,43 @@ vec2 get_pos() {
 	if (1.0f - abs(modelPos.z) < EPS) return vec2(modelPos.x, modelPos.y);
 }
 
+vec3 CalcDirLight(Dir_Light light) {
+	vec3 ambient = light.ambient * light.color * material.ambient;
+
+	vec3 normal = normalize(Tnormal);
+	vec3 lightDir = normalize(-light.direction);
+	float diff = max(dot(normal, lightDir), 0.0);
+	vec3 diffuse = light.diffuse * light.color * (diff * material.diffuse);
+
+	vec3 viewDir = normalize(camera.position - VertexPos);
+	vec3 reflectDir = reflect(-lightDir, normal);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	vec3 specular = light.specular * light.color * (spec * material.specular);
+
+	return (ambient + diffuse + specular);
+}
+vec3 CalcPointLight(Point_Light light) {
+	vec3 ambient = light.ambient * light.color * material.ambient;
+
+	vec3 normal = normalize(Tnormal);
+	vec3 lightDir = normalize(light.position - VertexPos);
+	float diff = max(dot(normal, lightDir), 0.0);
+	vec3 diffuse = light.diffuse * light.color * (diff * material.diffuse);
+
+	vec3 viewDir = normalize(camera.position - VertexPos);
+	vec3 reflectDir = reflect(-lightDir, normal);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	vec3 specular = light.specular * light.color * (spec * material.specular);
+
+	float distance = length(light.position - VertexPos);
+	float attenuation = 1.0 / (light.K.x + light.K.y * distance + light.K.z * (distance * distance));
+	ambient *= attenuation;
+	diffuse *= attenuation;
+	specular *= attenuation;
+
+	return (ambient + diffuse + specular);
+}
+
 void main() {
 	vec3 Rcolor = vec3(0.0);
 	vec2 FragPos = get_pos();
@@ -82,20 +147,9 @@ void main() {
 		Rcolor += palette2(float(i) / u_time, u_time * 0.5) * intensity;
 	}
 
+	vec3 Tret = vec3(0.0f);
+	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+		Tret += CalcPointLight(plight[i]) * Tcolor;
 
-	vec3 ambient = light.x * Lcolor * material.x;
-
-	vec3 norm = normalize(Tnormal);
-	vec3 lightDir = normalize(Lpos - Fpos);
-	float diff = max(dot(norm, lightDir), 0.0);
-	vec3 diffuse = light.y * Lcolor * (diff * material.y);
-
-	vec3 viewDir = normalize(Vpos - Fpos);
-	vec3 reflectDir = reflect(-lightDir, norm);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.w);
-	vec3 specular = light.z * Lcolor * (spec * material.z);
-
-	vec3 Tret = (ambient + diffuse + specular) * Tcolor;
-
-	gl_FragColor = vec4(Rcolor + 0.5 * Tret, 1.0f);
+	gl_FragColor = vec4(Rcolor + 0.5f * Tret, 1.0f);
 }

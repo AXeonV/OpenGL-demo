@@ -8,7 +8,7 @@ layout(location = 3) in vec3 normal;
 out vec2 Ttexcoord;
 out vec3 Tcolor;
 out vec3 Tnormal;
-out vec3 Fpos;
+out vec3 VertexPos;
 out float clipW;
 
 uniform mat4 model;
@@ -23,6 +23,6 @@ void main() {
 	Tcolor = color;
 	//Tcolor = vec3(0.2, 0.3, 0.4);
 	Tnormal = mat3(transpose(inverse(model))) * normal;
-	Fpos = vec3(model * vec4(pos, 1.0f));
+	VertexPos = vec3(model * vec4(pos, 1.0f));
 	clipW = clipPos.w;
 }

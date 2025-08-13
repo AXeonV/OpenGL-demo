@@ -10,6 +10,9 @@ a demo for opengl learning
 4. Coordinate Systems
 ![ÃÎºËÁúÃ¨](OpenGL/doc/cube1.1.png)
 5. Camera
-![Èü²©ÃÎºËĞÇ1](OpenGL/doc/cube2.1.png)
-![Èü²©ÃÎºËĞÇ2](OpenGL/doc/cube2.2.png)
+![Èü²©ÃÎºËĞÇ1A](OpenGL/doc/cube2.1.png)
+![Èü²©ÃÎºËĞÇ1B](OpenGL/doc/cube2.2.png)
 6. Lighting
+![Èü²©ÃÎºËĞÇ2A](OpenGL/doc/cube3.1.png)
+![Èü²©ÃÎºËĞÇ2B](OpenGL/doc/cube3.2.png)
+![Èü²©ÃÎºËĞÇ2C](OpenGL/doc/cube3.3.png)

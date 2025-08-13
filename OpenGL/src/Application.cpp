@@ -27,6 +27,13 @@ GLfloat lastY = HEIGHT / 2.0f;
 GLboolean firstMouse = true;
 GLboolean cursorEnabled = true;
 
+struct LampInfo {
+	glm::vec3 pos;
+	glm::vec3 color;
+};
+
+#define LAMP_NUM 3
+
 int main(void) {
 	/* setup GLFW */
 	glfwInit();
@@ -158,7 +165,7 @@ int main(void) {
 		glm::vec3(-1.8f,  1.0f, -1.5f)
 	};
 	/* init Lamp_position */
-	glm::vec3 LampPosition(-4.0f, 2.0f, -4.0f);
+	LampInfo lampInfo[3];
 
 	/* GAME LOOP */
 	while (!glfwWindowShouldClose(window)) {
@@ -181,30 +188,47 @@ int main(void) {
 		glm::mat4 view = Cam.GetViewMatrix();
 		glm::mat4 projection = glm::perspective(glm::radians(Cam.Zoom), (GLfloat)WIDTH / (GLfloat)HEIGHT, 0.1f, 100.0f);
 
-		/* draw lamp */
-		Lamp.Use();
 		GLfloat timeVal = (GLfloat)glfwGetTime();
-		LampPosition.x = -4.0f * sin(timeVal * 0.5f);
-		LampPosition.y = 2.0f * sin(timeVal * 0.5f);
-		LampPosition.z = -4.0f * cos(timeVal * 0.5f);
-		model = glm::translate(model, LampPosition);
-		model = glm::scale(model, glm::vec3(0.2f));
-		Lamp.setMat4("model", glm::value_ptr(model));
-		Lamp.setMat4("view", glm::value_ptr(view));
-		Lamp.setMat4("projection", glm::value_ptr(projection));
 
-		glBindVertexArray(light_VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
+		/* setup lamps */
+		Lamp.Use();
+		lampInfo[0].pos = glm::vec3(4.0f * sin(timeVal * 0.5f), 0.0f, 4.0f * cos(timeVal * 0.5f));
+		lampInfo[0].color = glm::vec3(1.0f, 1.0f, 1.0f);
+		lampInfo[1].pos = glm::vec3(0.0f , 2.0f * sin(timeVal * 0.5f + 20.0f), 4.0f * cos(timeVal * 0.5f + 20.0f));
+		lampInfo[1].color = glm::vec3(1.0f, 1.0f, 1.0f);
+		lampInfo[2].pos = glm::vec3(4.0f * sin(timeVal * 0.5 + 40.0f), 2.0f * cos(timeVal * 0.5f + 40.0f), 0.0f);
+		lampInfo[2].color = glm::vec3(1.0f, 1.0f, 1.0f);
+		/* draw lamps */
+		for (int i = 0; i < LAMP_NUM; ++i) {
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, lampInfo[i].pos);
+			model = glm::scale(model, glm::vec3(0.2f));
+			Lamp.setMat4("model", glm::value_ptr(model));
+			Lamp.setMat4("view", glm::value_ptr(view));
+			Lamp.setMat4("projection", glm::value_ptr(projection));
 
-		/* draw cubes */
+			glBindVertexArray(light_VAO);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
+		}
+
+		/* setup cubes */
 		Cube.Use();
-		Cube.setVec3("Lcolor", 1.0f, 1.0f, 1.0f);
-		Cube.setVec3("light", 1.0f, 1.0f, 1.0f);
-		Cube.setVec4("material", 0.1f, 0.5f, 3.0f, 32.0f);
-		Cube.setVec3("Lpos", LampPosition.x, LampPosition.y, LampPosition.z);
-		Cube.setVec3("Vpos", Cam.Position.x, Cam.Position.y, Cam.Position.z);
-
+		Cube.setVec3("camera.position", Cam.Position.x, Cam.Position.y, Cam.Position.z);
+		for (int i = 0; i < LAMP_NUM; ++i) {
+			std::string ch; ch += i ^ 48;
+			Cube.setVec3(("plight[" + ch + "].position").c_str(), lampInfo[i].pos.x, lampInfo[i].pos.y, lampInfo[i].pos.z);
+			Cube.setVec3(("plight[" + ch + "].color").c_str(), lampInfo[i].color.x, lampInfo[i].color.y, lampInfo[i].color.z);
+			Cube.setFloat(("plight[" + ch + "].ambient").c_str(), 1.0f);
+			Cube.setFloat(("plight[" + ch + "].diffuse").c_str(), 1.0f);
+			Cube.setFloat(("plight[" + ch + "].specular").c_str(), 1.0f);
+			Cube.setVec3(("plight[" + ch + "].K").c_str(), 1.0f, 0.045f, 0.0075f);
+		}
+		Cube.setFloat("material.ambient", 0.1f);
+		Cube.setFloat("material.diffuse", 0.5f);
+		Cube.setFloat("material.specular", 3.0f);
+		Cube.setFloat("material.shininess", 32.0f);
+		/* draw cubes */
 		for (int i = 0; i < 10; ++i) {
 			/* setup transformation */
 			model = glm::mat4(1.0f);
