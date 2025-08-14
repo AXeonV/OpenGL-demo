@@ -24,15 +24,16 @@ GLuint WIDTH = 1200, HEIGHT = 1200;
 Camera Cam(glm::vec3(0.0f, 0.0f, 3.0f));
 GLfloat lastX = WIDTH / 2.0f;
 GLfloat lastY = HEIGHT / 2.0f;
-GLboolean firstMouse = true;
-GLboolean cursorEnabled = true;
+bool firstMouse = true;
+bool cursorEnabled = true;
+bool isFullscreen = false;
 
 struct LampInfo {
 	glm::vec3 pos;
 	glm::vec3 color;
 };
 
-#define LAMP_NUM 3
+constexpr int LAMP_NUM = 3;
 
 int main(void) {
 	/* setup GLFW */
@@ -54,7 +55,7 @@ int main(void) {
 	}
 	glfwMakeContextCurrent(window);
 
-	glfwSwapInterval(1); // fps:60
+	//glfwSwapInterval(1); // Enable vsync
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetKeyCallback(window, key_callback);
@@ -131,8 +132,8 @@ int main(void) {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
+	//glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+	//glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
@@ -147,9 +148,9 @@ int main(void) {
 	glEnableVertexAttribArray(0);
 
 	/* load texture */
-	GLuint texture1, texture2;
-	set_texture(texture1, "res/textures/wall.jpg");
-	set_texture(texture2, "res/textures/cbc.jpg");
+	//GLuint texture1, texture2;
+	//set_texture(texture1, "res/textures/wall.jpg");
+	//set_texture(texture2, "res/textures/cbc.jpg");
 
 	/* init cube_position */
 	glm::vec3 cubePositions[] = {
@@ -176,12 +177,12 @@ int main(void) {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/* setup texture */
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-		Cube.setInt("Utexture1", 0);
-		Cube.setInt("Utexture2", 1);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, texture1);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_2D, texture2);
+		//Cube.setInt("Utexture1", 0);
+		//Cube.setInt("Utexture2", 1);
 
 		/* setup transformation */
 		glm::mat4 model = glm::mat4(1.0f); 
@@ -225,8 +226,8 @@ int main(void) {
 			Cube.setVec3(("plight[" + ch + "].K").c_str(), 1.0f, 0.045f, 0.0075f);
 		}
 		Cube.setFloat("material.ambient", 0.0f);
-		Cube.setFloat("material.diffuse", 0.2f);
-		Cube.setFloat("material.specular", 3.0f);
+		Cube.setFloat("material.diffuse", 0.1f);
+		Cube.setFloat("material.specular", 2.0f);
 		Cube.setFloat("material.shininess", 32.0f);
 		/* draw cubes */
 		for (int i = 0; i < 10; ++i) {
@@ -249,6 +250,9 @@ int main(void) {
 		/* update */
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		/* move camera */
+		Cam.Move();
 	}
 
 	/* delete buffer */
@@ -274,15 +278,27 @@ static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint ac
 			firstMouse = true;
 		}
 	}
+	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+		isFullscreen ^= 1;
+		if (isFullscreen) {
+			GLFWmonitor* primary = glfwGetPrimaryMonitor();
+			const GLFWvidmode* mode = glfwGetVideoMode(primary);
+			glfwSetWindowMonitor(window, primary, 0, 0, mode->width, mode->height, mode->refreshRate);
+		}
+		else {
+			glfwSetWindowMonitor(window, nullptr, 100, 100, WIDTH = 1200, HEIGHT = 1200, 0);
+		}
+	}
 
+	bool isStopped = (action == GLFW_RELEASE);
 	if (key == GLFW_KEY_W)
-		Cam.ProcessKeyboard(FORWARD);
+		Cam.ProcessKeyboard(FORWARD, isStopped);
 	if (key == GLFW_KEY_S)
-		Cam.ProcessKeyboard(BACKWARD);
+		Cam.ProcessKeyboard(BACKWARD, isStopped);
 	if (key == GLFW_KEY_A)
-		Cam.ProcessKeyboard(LEFT);
+		Cam.ProcessKeyboard(LEFT, isStopped);
 	if (key == GLFW_KEY_D)
-		Cam.ProcessKeyboard(RIGHT);
+		Cam.ProcessKeyboard(RIGHT, isStopped);
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, GLint width, GLint height) {

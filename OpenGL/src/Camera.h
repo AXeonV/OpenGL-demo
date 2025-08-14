@@ -19,7 +19,7 @@ enum Camera_Movement {
 // Default camera values
 const GLfloat YAW = -90.0f;
 const GLfloat PITCH = 0.0f;
-const GLfloat SPEED = 0.05f;
+const GLfloat SPEED = 0.005f;
 const GLfloat SENSITIVITY = 0.1f;
 const GLfloat ZOOM = 45.0f;
 
@@ -37,6 +37,8 @@ public:
 	GLfloat Yaw;
 	GLfloat Pitch;
 	// camera options
+	GLfloat FrontSpeed = 0.0f;
+	GLfloat RightSpeed = 0.0f;
 	GLfloat MovementSpeed;
 	GLfloat MouseSensitivity;
 	GLfloat Zoom;
@@ -63,20 +65,29 @@ public:
 		return glm::lookAt(Position, Position + Front, Up);
 	}
 
+	void Move() {
+		Position += Front * FrontSpeed;
+		Position += Right * RightSpeed;
+	}
+
 	// processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-	void ProcessKeyboard(Camera_Movement direction) {
+	void ProcessKeyboard(Camera_Movement direction, bool isStopped) {
 		if (direction == FORWARD)
-			Position += Front * MovementSpeed;
+			//Position += Front * MovementSpeed;
+			FrontSpeed = isStopped ? 0.0f : MovementSpeed;
 		if (direction == BACKWARD)
-			Position -= Front * MovementSpeed;
+			//Position -= Front * MovementSpeed;
+			FrontSpeed = isStopped ? 0.0f : -MovementSpeed;
 		if (direction == LEFT)
-			Position -= Right * MovementSpeed;
+			//Position -= Right * MovementSpeed;
+			RightSpeed = isStopped ? 0.0f : -MovementSpeed;
 		if (direction == RIGHT)
-			Position += Right * MovementSpeed;
+			//Position += Right * MovementSpeed;
+			RightSpeed = isStopped ? 0.0f : MovementSpeed;
 	}
 
 	// processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-	void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true) {
+	void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, bool constrainPitch = true) {
 		xoffset *= MouseSensitivity;
 		yoffset *= MouseSensitivity;
 

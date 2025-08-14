@@ -1,9 +1,9 @@
 #version 330 core
 
-in vec2 Ttexcoord;
+//in vec2 Ttexcoord;
 in vec3 Tcolor;
 in vec3 Tnormal;
-in vec3 VertexPos;
+in vec3 Wpos;
 in float clipW;
 
 uniform vec2 u_resolution;
@@ -75,7 +75,7 @@ float noise(vec2 p) {
 		u.y);
 }
 
-vec2 get_pos() {
+vec2 get_pos() { // 逆变换计算出顶点的模型坐标
 	vec3 ndc;
 	ndc.x = (gl_FragCoord.x / u_resolution.x) * 2.0 - 1.0;
 	ndc.y = (gl_FragCoord.y / u_resolution.y) * 2.0 - 1.0;
@@ -97,7 +97,7 @@ vec3 CalcDirLight(Dir_Light light) {
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = light.diffuse * light.color * (diff * material.diffuse);
 
-	vec3 viewDir = normalize(camera.position - VertexPos);
+	vec3 viewDir = normalize(camera.position - Wpos);
 	vec3 reflectDir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	vec3 specular = light.specular * light.color * (spec * material.specular);
@@ -108,16 +108,16 @@ vec3 CalcPointLight(Point_Light light) {
 	vec3 ambient = light.ambient * light.color * material.ambient;
 
 	vec3 normal = normalize(Tnormal);
-	vec3 lightDir = normalize(light.position - VertexPos);
+	vec3 lightDir = normalize(light.position - Wpos);
 	float diff = max(dot(normal, lightDir), 0.0);
 	vec3 diffuse = light.diffuse * light.color * (diff * material.diffuse);
 
-	vec3 viewDir = normalize(camera.position - VertexPos);
+	vec3 viewDir = normalize(camera.position - Wpos);
 	vec3 reflectDir = reflect(-lightDir, normal);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	vec3 specular = light.specular * light.color * (spec * material.specular);
 
-	float distance = length(light.position - VertexPos);
+	float distance = length(light.position - Wpos);
 	float attenuation = 1.0 / (light.K.x + light.K.y * distance + light.K.z * (distance * distance));
 	ambient *= attenuation;
 	diffuse *= attenuation;
@@ -151,5 +151,8 @@ void main() {
 	for (int i = 0; i < NR_POINT_LIGHTS; ++i)
 		Tret += CalcPointLight(plight[i]) * Tcolor;
 
-	gl_FragColor = vec4(Rcolor + 0.5f * Tret, 1.0f);
+	vec3 Rret = Rcolor * Tcolor;
+
+	//gl_FragColor = vec4(Rcolor * Tcolor * 2.0f, 1.0f);
+	gl_FragColor = vec4(Rret + Tret, 1.0f);
 }
