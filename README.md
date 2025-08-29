@@ -8,12 +8,13 @@ a demo for opengl learning
 ![container](OpenGL/doc/container.png)
 3. Transformations
 4. Coordinate Systems
-![ÃÎºËÁúÃ¨](OpenGL/doc/cube1.1.png)
+![æ¢¦æ ¸é¾™çŒ«](OpenGL/doc/cube1.1.png)
 5. Camera
-![Èü²©ÃÎºËĞÇ1A](OpenGL/doc/cube2.1.png)
-![Èü²©ÃÎºËĞÇ1B](OpenGL/doc/cube2.2.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ1A](OpenGL/doc/cube2.1.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ1B](OpenGL/doc/cube2.2.png)
 6. Lighting
-![Èü²©ÃÎºËĞÇ2A](OpenGL/doc/cube3.1.png)
-![Èü²©ÃÎºËĞÇ2B](OpenGL/doc/cube3.2.png)
-![Èü²©ÃÎºËĞÇ2C](OpenGL/doc/cube3.3.png)
-![Èü²©ÃÎºËĞÇ2D](OpenGL/doc/cube3.4.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ2A](OpenGL/doc/cube3.1.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ2B](OpenGL/doc/cube3.2.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ2C](OpenGL/doc/cube3.3.png)
+![èµ›åšæ¢¦æ ¸æ˜Ÿ2D](OpenGL/doc/cube3.4.png)
+### [çº³ç±³æ¢¦æ ¸æ˜Ÿ on Bilibili](https://www.bilibili.com/video/BV1S9bjzHE8W)

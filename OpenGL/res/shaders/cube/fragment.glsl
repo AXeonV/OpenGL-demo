@@ -153,6 +153,6 @@ void main() {
 
 	vec3 Rret = Rcolor * Tcolor;
 
-	//gl_FragColor = vec4(Rcolor * Tcolor * 2.0f, 1.0f);
+	//gl_FragColor = vec4(Rret * 2.0f, 1.0f);
 	gl_FragColor = vec4(Rret + Tret, 1.0f);
 }
