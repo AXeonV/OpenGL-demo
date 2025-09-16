@@ -1,6 +1,10 @@
 # OpenGL-demo
 a demo for opengl learning
 
+## Latest
+### [纳米梦核星_哔哩哔哩_bilibili by AXeonV](https://www.bilibili.com/video/BV1S9bjzHE8W)
+
+## Steps
 0. Re
 1. Shaders
 ![triangle](OpenGL/doc/triangle.png)
@@ -17,4 +21,3 @@ a demo for opengl learning
 ![赛博梦核星2B](OpenGL/doc/cube3.2.png)
 ![赛博梦核星2C](OpenGL/doc/cube3.3.png)
 ![赛博梦核星2D](OpenGL/doc/cube3.4.png)
-### [纳米梦核星 on Bilibili](https://www.bilibili.com/video/BV1S9bjzHE8W)
