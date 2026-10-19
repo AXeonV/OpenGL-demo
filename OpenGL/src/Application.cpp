@@ -1,6 +1,10 @@
 #include <iostream>
 
-#include <glad/glad.h>
+#include "GLPlatform.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <GLFW/emscripten_glfw3.h>
+#endif
 #include <GLFW/glfw3.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -40,14 +44,20 @@ int main(void) {
 	glfwInit();
 
 	std::cout << "using OpenGL 3.3" << std::endl;
+#ifdef __EMSCRIPTEN__
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#else
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, u8"Èü²©ÃÎºËÐÇ", nullptr, nullptr);
+	static GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, u8"Èü²©ÃÎºËÐÇ", nullptr, nullptr);
 	if (window == nullptr) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -62,20 +72,43 @@ int main(void) {
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
+#ifdef __EMSCRIPTEN__
+	emscripten::glfw3::MakeCanvasResizable(window, "#canvas-container");
+	int frameWidth, frameHeight;
+	glfwGetFramebufferSize(window, &frameWidth, &frameHeight);
+	framebuffer_size_callback(window, frameWidth, frameHeight);
+	glfwSetMouseButtonCallback(window, [](GLFWwindow* target, int button, int action, int) {
+		static bool activated = false;
+		if (!activated && button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+			activated = true;
+			firstMouse = true;
+			glfwSetInputMode(target, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+	});
+	glfwSetWindowFocusCallback(window, [](GLFWwindow*, int focused) {
+		if (!focused) {
+			Cam.FrontSpeed = Cam.RightSpeed = 0.0f;
+			firstMouse = true;
+		}
+	});
+#else
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+#endif
 
+#ifndef __EMSCRIPTEN__
 	/* setup GLAD */
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
 
+#endif
 	/* setup OpenGL */
 	glEnable(GL_DEPTH_TEST);
 
 	/* setup shaders */
-	Shader Cube("res/shaders/cube/vertex.glsl", "res/shaders/cube/fragment.glsl");
-	Shader Lamp("res/shaders/light/vertex.glsl", "res/shaders/light/fragment.glsl");
+	static Shader Cube("res/shaders/cube/vertex.glsl", "res/shaders/cube/fragment.glsl");
+	static Shader Lamp("res/shaders/light/vertex.glsl", "res/shaders/light/fragment.glsl");
 
 	/* init vertex data */
 	GLfloat vertices[] = {
@@ -124,7 +157,7 @@ int main(void) {
 	};
 
 	/* setup vertex & pointer */
-	GLuint VBO, cube_VAO;
+	static GLuint VBO, cube_VAO;
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &cube_VAO);
 	glBindVertexArray(cube_VAO);
@@ -140,7 +173,7 @@ int main(void) {
 	glEnableVertexAttribArray(3);
 	glBindVertexArray(0);
 
-	GLuint light_VAO;
+	static GLuint light_VAO;
 	glGenVertexArrays(1, &light_VAO);
 	glBindVertexArray(light_VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -153,7 +186,7 @@ int main(void) {
 	//set_texture(texture2, "res/textures/cbc.jpg");
 
 	/* init cube_position */
-	glm::vec3 cubePositions[] = {
+	static glm::vec3 cubePositions[] = {
 		glm::vec3( 0.0f,  0.0f,  0.0f),
 		glm::vec3( 2.0f,  5.0f, -15.0f),
 		glm::vec3(-1.8f, -1.8f, -2.5f),
@@ -166,10 +199,11 @@ int main(void) {
 		glm::vec3(-1.8f,  1.0f, -1.5f)
 	};
 	/* init Lamp_position */
-	LampInfo lampInfo[3];
+	static LampInfo lampInfo[3];
 
 	/* GAME LOOP */
-	while (!glfwWindowShouldClose(window)) {
+	// Persistent state above lets this exact frame body run in either platform loop.
+	static auto renderFrame = []() {
 		/* render */
 
 		/* clear */
@@ -253,7 +287,21 @@ int main(void) {
 
 		/* move camera */
 		Cam.Move();
-	}
+	};
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop([]() {
+		if (glfwWindowShouldClose(window)) {
+			emscripten_cancel_main_loop();
+			glDeleteVertexArrays(1, &cube_VAO);
+			glDeleteBuffers(1, &VBO);
+			glfwTerminate();
+			return;
+		}
+		renderFrame();
+	}, 0, true);
+#else
+	while (!glfwWindowShouldClose(window)) renderFrame();
+#endif
 
 	/* delete buffer */
 	glDeleteVertexArrays(1, &cube_VAO);
@@ -265,9 +313,13 @@ int main(void) {
 }
 
 static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint action, GLint mode) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	}
 	if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS) {
+#ifdef __EMSCRIPTEN__
+		cursorEnabled = glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
+#endif
 		cursorEnabled ^= 1;
 		if (cursorEnabled) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -278,6 +330,7 @@ static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint ac
 			firstMouse = true;
 		}
 	}
+#ifndef __EMSCRIPTEN__
 	if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 		isFullscreen ^= 1;
 		if (isFullscreen) {
@@ -290,6 +343,7 @@ static void key_callback(GLFWwindow* window, GLint key, GLint scancode, GLint ac
 		}
 	}
 
+#endif
 	bool isStopped = (action == GLFW_RELEASE);
 	if (key == GLFW_KEY_W)
 		Cam.ProcessKeyboard(FORWARD, isStopped);

@@ -61,3 +61,8 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Preserve prebuilt WebAssembly and resource-package byte offsets.
+web/*.wasm -text
+web/*.data -text
+web/app.js text eol=lf
